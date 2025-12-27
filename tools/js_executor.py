@@ -2,7 +2,6 @@ import subprocess
 import tempfile
 import os
 import multiprocessing
-import atexit
 import json
 import shutil
 from feapder.utils.log import log

@@ -86,8 +86,6 @@ class AirSpiderTest(feapder.AirSpider):
         future = self.js_executor.submit_task(js_encode_logic, email=email, password=password)
         log.info(f"异步任务结果: {future.result()}")
 
-
-
 if __name__ == "__main__":
 
     # Windows 环境下必须加这句
