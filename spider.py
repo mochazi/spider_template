@@ -56,6 +56,7 @@ class AirSpiderTest(feapder.AirSpider):
 
     # 解析 get_url
     def parse_get_url(self, request, response):
+        
         data = response.json['args']
         log.info(f"response.json['args'] = {response.json['args']}")
         yield feapder.Request(url='https://httpbin.org/post', json=data)
