@@ -1,0 +1,13 @@
+[project]
+name = "spider_template"
+version = "0.1.0"
+description = "爬虫模板"
+readme = "README.md"
+requires-python = ">=3.11"
+dependencies = [
+    "bs4==0.0.2",
+    "cryptography==41.0.7",
+    "curl-cffi==0.13.0",
+    "feapder==1.9.3",
+    "urllib3==1.26.16",
+]
