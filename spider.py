@@ -21,25 +21,32 @@ class AirSpiderTest(feapder.AirSpider):
     
     def download_midware(self, request):
         # ------------通用转发中间件------------
-        request.cookies = self.cookies
-        request.headers = self.headers
+        if not hasattr(request, 'cookies'):
+            request.cookies = self.cookies
+        if not hasattr(request, 'headers'):
+            request.headers = self.headers
 
         params = None
         if hasattr(request, 'params'):
             params = request.params
         if hasattr(request, 'data'):
             response = curl_cffi.requests.request(method='POST', url=request.url, params=params, data=request.data, headers=request.headers, cookies=request.cookies)
+            self.cookies.update(response.cookies.get_dict())
         elif hasattr(request, 'json'):
             response = curl_cffi.requests.request(method='POST', url=request.url, params=params, json=request.json, headers=request.headers, cookies=request.cookies)
+            self.cookies.update(response.cookies.get_dict())
         else:
             response = curl_cffi.requests.request(method='GET', url=request.url, params=params, headers=request.headers, cookies=request.cookies)
+            self.cookies.update(response.cookies.get_dict())
+
+        request.cookies = self.cookies
 
         parsed = urlparse(request.url)
         domain = f"{parsed.scheme}://{parsed.netloc}"
         if hasattr(request, 'encoding'):
-            response = Response.from_text(text=response.text, url=domain, cookies=request.cookies, encoding=request.encoding)
+            response = Response.from_text(text=response.text, url=domain, cookies=request.cookies, encoding=request.encoding, headers=response.headers)
         else:
-            response = Response.from_text(text=response.text, url=domain, cookies=request.cookies)
+            response = Response.from_text(text=response.text, url=domain, cookies=request.cookies, headers=response.headers)
 
         return request, response
 
@@ -90,6 +97,12 @@ if __name__ == "__main__":
     spider = AirSpiderTest()
     spider.start()
 
-    while spider.all_thread_is_done() is False:
+    # 检测 3次
+    for _ in range(3):
+        while spider.all_thread_is_done() is False:
+            time.sleep(1)
         time.sleep(1)
     
+    js_executor = JSExecutor()
+    if js_executor.is_active:
+        js_executor.shutdown()

@@ -59,50 +59,51 @@ class JSExecutor:
 
     def __new__(cls, *args, **kwargs):
         if not cls._instance:
+            if not shutil.which("node"):
+                log.error("未检测到 Node.js 环境，请检查 PATH 变量")
+                raise RuntimeError("Node.js not found.")
 
-            node_path = shutil.which("node")
-            if not node_path:
-                log.exception("未检测到 Node.js 环境，请先安装 Node.js 并将其添加到环境变量 PATH 中！")
-            
             cls._instance = super(JSExecutor, cls).__new__(cls)
-            # 运算密集型推荐核心数；I/O 密集型推荐核心数*2
-            # 这里取逻辑核心数作为 max_workers
-            # 留1个核心避免卡死
-            cores = multiprocessing.cpu_count() - 1
+            
+            cores = max(1, multiprocessing.cpu_count() - 1)
             cls._instance.executor = ProcessPoolExecutor(max_workers=cores)
-            # 注册程序退出时的自动关闭钩子
-            atexit.register(cls._instance.shutdown)
-            log.debug(f"[JSExecutor] 单例初始化成功，工作进程数: {cores}")
+            
+            log.debug(f"[JSExecutor] 初始化成功，工作进程数: {cores}")
         return cls._instance
 
-    def submit_task(self, func, **kwargs):
-        """
-        异步提交单个任务
-        用法: handler.submit_task(js_encode_logic, param1="A", param2="B", timeout_sec=15)
-        """
-        if not self.executor:
-            raise RuntimeError("进程池已关闭")
-        return self.executor.submit(func, **kwargs)
+    @property
+    def is_active(self):
+        """检测是否存活"""
+        return self.executor is not None
 
-    def map_tasks(self, func, dict_params_list):
-        """
-        批量提交字典任务列表
-        用法: handler.map_tasks(js_encode_logic, [{"param1":"A", "param2":"B"}, {...}])
-        """
-        if not self.executor:
-            raise RuntimeError("进程池已关闭")
-        
-        # 使用 partial 包装，使其支持 map 批量处理字典
-        wrapper_func = partial(_jsexecutor_dict_wrapper, func=func)
-        return list(self.executor.map(wrapper_func, dict_params_list))
+    def submit_task(self, func, **kwargs):
+        """异步提交单个任务"""
+        if not self.is_active:
+            return None
+        try:
+            return self.executor.submit(func, **kwargs)
+        except RuntimeError: # 拦截解释器关闭异常
+            return None
+
+    def map_tasks(self, func, dict_params_list, timeout_sec=30):
+        """批量提交字典列表"""
+        if not self.is_active:
+            return []
+        try:
+            wrapper_func = partial(_jsexecutor_dict_wrapper, func=func, timeout_sec=timeout_sec)
+            return list(self.executor.map(wrapper_func, dict_params_list))
+        except RuntimeError:
+            return []
 
     def shutdown(self):
-        """优雅关闭进程池"""
+        """手动优雅退出"""
         if self.executor:
-            log.debug("[JSExecutor] 正在关闭进程池并清理资源...")
-            self.executor.shutdown(wait=True)
-            self.executor = None
-            log.debug("[JSExecutor] 关闭进程池完毕")
+            log.debug("[JSExecutor] 正在执行手动关闭...")
+            try:
+                self.executor.shutdown(wait=True)
+            finally:
+                self.executor = None
+                log.info("[JSExecutor] 进程池已完全关闭")
 
 if __name__ == '__main__':
     # Windows 环境下必须加这句
@@ -125,3 +126,6 @@ if __name__ == '__main__':
     log.info("异步提交单个任务...")
     future = js_executor.submit_task(js_encode_logic, email=email, password=password)
     log.info(f"异步任务结果: {future.result()}")
+
+    if js_executor.is_active:
+        js_executor.shutdown()
