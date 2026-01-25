@@ -1,0 +1,18 @@
+[project]
+name = "package"
+version = "0.1.0"
+description = "打包"
+readme = "README.md"
+requires-python = "==3.11.12"
+dependencies = [
+    "cython>=3.2.4",
+    "pathspec>=1.0.3",
+    "setuptools>=80.10.1",
+]
+
+[tool.uv]
+python-install-mirror = "https://registry.npmmirror.com/-/binary/python-build-standalone"
+
+[[tool.uv.index]]
+url="https://pypi.tuna.tsinghua.edu.cn/simple"
+default=true

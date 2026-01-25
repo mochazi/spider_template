@@ -1,0 +1,12 @@
+__pycache__/
+.git/
+logs/
+*.log
+build/
+dist/
+wheels/
+*.egg-info
+release
+.venv
+logs/
+*.pk

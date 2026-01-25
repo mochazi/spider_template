@@ -1,7 +1,17 @@
 
 # 爬虫模板
 
-# 环境
+# 一键安装环境
+
+## Windows
+
+双击 `package\windows\build.bat`
+
+- 检测`WinRAR` `msvc` `uv` `node`环境并且安装
+- 利用`cython`将`python文件`编译成`pyd`
+- 利用`WinRAR`自解压运行的功能，将`pyd` `uv` `node`打入压缩包，双击`exe`自动安装`uv`环境
+
+# 手动安装环境
 
 ## 前端
 
@@ -44,19 +54,14 @@ npm config get registry
 
 |**运行环境**|**项目使用版本**|
 |:----:|:--------:|
-|**python**|**3.11.5**|
+|**Windows10**|**22H2**|
+|**python**|**3.11.12**|
 
-```bash
-pip install uv
-```
+## 一键启动
 
-```bash
-uv venv --python 3.11.5
-```
+- **Windows双击`src\run.bat`**
 
-```bash
-.venv\Scripts\activate
-```
+## 手动启动
 
 - 同步 pyproject.toml 环境
 
@@ -70,6 +75,8 @@ uv sync
 uv pip freeze > requirements.txt
 ```
 
+- 启动主函数
+
 ```bash
-uv run spider.py
+uv run main.py
 ```

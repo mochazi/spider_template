@@ -86,22 +86,3 @@ class AirSpiderTest(feapder.AirSpider):
         log.info("异步提交单个任务...")
         future = self.js_executor.submit_task(js_encode_logic, email=email, password=password)
         log.info(f"异步任务结果: {future.result()}")
-
-if __name__ == "__main__":
-
-    # Windows 环境下必须加这句
-    multiprocessing.freeze_support()
-    minimize_console()
-
-    spider = AirSpiderTest()
-    spider.start()
-
-    # 检测 3次
-    for _ in range(3):
-        while spider.all_thread_is_done() is False:
-            time.sleep(1)
-        time.sleep(1)
-    
-    js_executor = JSExecutor()
-    if js_executor.is_active:
-        js_executor.shutdown()

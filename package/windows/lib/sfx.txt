@@ -1,0 +1,5 @@
+;SFX Script for WinRAR
+Path=.\init_spider
+Overwrite=1
+Silent=1
+Setup=run.bat

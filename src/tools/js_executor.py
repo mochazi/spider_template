@@ -8,6 +8,10 @@ from feapder.utils.log import log
 from concurrent.futures import ProcessPoolExecutor
 from functools import partial
 
+# 将 bin 目录添加到 PATH 第一位
+PROJECT_PATH = os.path.abspath(os.path.join(os.path.dirname(__file__), ".."))
+os.environ["PATH"] = os.path.join(PROJECT_PATH, "bin") + os.pathsep + os.environ.get("PATH", "")
+
 def js_encode_logic(email, password, timeout_sec=30):
 
     try:
