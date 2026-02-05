@@ -14,9 +14,10 @@ if __name__ == "__main__":
         task_keys=["id", "url"],
         redis_key=f"feapder:spider_task_{QUANTITY_ID}",
         keep_alive=True,
+        delete_keys="*z_requests",
         task_condition=f"quantity_id={QUANTITY_ID}"
     )
-    spider.start()
+    spider.start_monitor_task()
 
     # 检测 3次
     for _ in range(3):

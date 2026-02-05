@@ -2,14 +2,17 @@
 import feapder,multiprocessing
 from feapder import Response
 from feapder.utils.log import log
-import curl_cffi, time, os
+import curl_cffi, time, os, random
 from urllib.parse import urlparse
 from tools.tools import CookieMaster, minimize_console
 from tools.js_executor import JSExecutor,js_encode_logic
+from setting import QUANTITY_ID, QUANTITY_COUNT
 
 log.info(f"[当前工作路径] {os.getcwd()}")
+log.info(f"[分布式ID] {QUANTITY_ID}")
+log.info(f"[分布式数量] {QUANTITY_COUNT}")
 
-class AirSpiderTest(feapder.AirSpider):
+class TaskSpiderTest(feapder.TaskSpider):
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
@@ -50,27 +53,36 @@ class AirSpiderTest(feapder.AirSpider):
 
         return request, response
 
-    def start_requests(self):
+    def add_task(self):
+        sql = f"INSERT INTO spider_task (url, state, parser_name, quantity_id) VALUES (%s, %s, %s, %s) ON DUPLICATE KEY UPDATE state = IF({self._task_condition}, VALUES(state), state)"
+        sqls = []
+        for index in range(50):
+            sqls.append([
+                f'https://httpbin.org/get?params={index}',
+                0,
+                self.__class__.__name__,
+                random.randint(1, QUANTITY_COUNT)
+            ])
 
-        yield feapder.Request(url='https://httpbin.org/get', params={"a":1, "b": 2}, callback=self.parse_get_url)
+        self._mysqldb.add_batch(sql, sqls)
 
-    # 解析 get_url
-    def parse_get_url(self, request, response):
+    def start_requests(self, task):
         
-        data = response.json['args']
-        log.info(f"response.json['args'] = {response.json['args']}")
-        yield feapder.Request(url='https://httpbin.org/post', json=data)
+        task_id = task.get('id')
+        yield feapder.Request(url=task.url, 
+                              callback=self.parse,
+                              task_id=task_id)
 
     # 校验是否请求成功
     def validate(self, request, response):
 
-        if request.callback_name == 'parse' :
-            if response.json['origin']:
-                raise Exception("response.json['origin'] is None") 
+        if request.callback_name == 'parse':
+            if response.json.get('origin') is None :
+                raise Exception("response.json.get('origin') is None") 
         return True
 
     def parse(self, request, response):
-        log.info(f"response.json['args'] = {response.json['data']}")
+        log.info(f"response.json['args'] = {response.json['args']}")
 
         email = "123456@qq.com"
         password = "123456"
@@ -86,3 +98,6 @@ class AirSpiderTest(feapder.AirSpider):
         log.info("异步提交单个任务...")
         future = self.js_executor.submit_task(js_encode_logic, email=email, password=password)
         log.info(f"异步任务结果: {future.result()}")
+
+        # 标记MySQL完成任务
+        yield self.update_task_batch(request.task_id)

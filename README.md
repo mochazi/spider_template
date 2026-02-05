@@ -56,6 +56,8 @@ npm config get registry
 |:----:|:--------:|
 |**Windows10**|**22H2**|
 |**python**|**3.11.12**|
+|**MySQL**|**5.x**|
+|**Redis**|**3.X**|
 
 ## 一键启动
 
@@ -75,8 +77,37 @@ uv sync
 uv pip freeze > requirements.txt
 ```
 
-- 启动主函数
+- 启动推送任务
+
+```bash
+uv run push_task.py
+```
+
+- 启动消费任务
 
 ```bash
 uv run main.py
+```
+
+# 数据库
+
+## 安装数据库
+
+[phpStudy_64](https://public.xp.cn/upgrades/phpStudy_64.zip) 自带`MySQL` `Redis`的一键安装
+
+[TinyRDM (Redis管理工具)](https://redis.tinycraft.cc)
+
+[DBeaver (MySQL管理工具)](https://dbeaver.io/download)
+
+---
+
+### 导入MySQL数据库
+
+- 账号：root
+- 密码：root
+
+切换到 `cmd` 后执行以下指令
+
+```shell
+cd sql && mysql -uroot -proot -e "DROP DATABASE IF EXISTS init_spider;CREATE DATABASE init_spider CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci; USE init_spider; SOURCE all.sql;"
 ```
